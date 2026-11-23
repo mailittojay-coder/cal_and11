@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CASIO fx-82MS Scientific Calculator</title>
+  <style>
+    :root {
+      --casio-body: #1f242c;
+      --casio-bezel: #2c333f;
+      --lcd-bg: #c5d3b4;
+      --lcd-bg-lit: #d4e3c2;
+      --lcd-ink: #172114;
+      --lcd-dim: rgba(23, 33, 20, 0.25);
+      --shift-color: #f5b041;
+      --alpha-color: #ec7063;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at top, #181c22 0%, #0d1014 100%);
+      color: #f3f4f6;
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      overflow-x: hidden;
+    }
+
+    .calc-shell {
+      width: 100%;
+      max-width: 412px;
+      background: linear-gradient(175deg, #2b313b 0%, #1c2028 45%, #171a21 100%);
+      border-radius: 28px;
+      padding: 14px 14px 18px;
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.65),
+        inset 0 1px 1px rgba(255, 255, 255, 0.14),
+        inset 0 -3px 8px rgba(0, 0, 0, 0.5);
+      border: 1px solid #363e4a;
+      position: relative;
+    }
+
+    @media (max-width: 440px) {
+      body {
+        padding: 0;
+        background: #171a21;
+      }
+      .calc-shell {
+        max-width: 100%;
+        min-height: 100vh;
+      min-height: 100dvh;
+        border-radius: 0;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 10px 10px 14px;
+      }
+    }
+
+    .lcd-frame {
+      background: #14171c;
+      border-radius: 14px;
+      padding: 7px;
+      box-shadow:
+        inset 0 3px 8px rgba(0, 0, 0, 0.8),
+        0 1px 0 rgba(255, 255, 255, 0.08);
+      border: 1px solid #353c47;
+    }
+
+    .lcd-screen {
+      background: linear-gradient(180deg, var(--lcd-bg) 0%, #bac9a8 100%);
+      color: var(--lcd-ink);
+      border-radius: 8px;
+      padding: 7px 10px 8px;
+      min-height: 98px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.22);
+      position: relative;
+      transition: background 0.2s ease;
+    }
+
+    .lcd-screen.backlight {
+      background: linear-gradient(180deg, var(--lcd-bg-lit) 0%, #c8d9b5 100%);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 14px rgba(197, 211, 180, 0.25);
+    }
+
+    .lcd-indicators {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      height: 14px;
+      border-bottom: 1px solid rgba(23, 33, 20, 0.1);
+      padding-bottom: 2px;
+    }
+
+    .ind-pill {
+      padding: 0 3px;
+      border-radius: 2px;
+      color: var(--lcd-dim);
+      transition: all 0.12s ease;
+    }
+
+    .ind-pill.active {
+      color: var(--lcd-ink);
+      background: rgba(23, 33, 20, 0.12);
+    }
+
+    .ind-pill.shift-active {
+      background: #172114;
+      color: #d4e3c2;
+    }
+
+    .ind-pill.alpha-active {
+      background: #172114;
+      color: #d4e3c2;
+    }
+
+    .lcd-expr {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.3;
+      min-height: 24px;
+      max-height: 44px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      scrollbar-width: none;
+      padding: 4px 0 2px;
+      letter-spacing: 0.02em;
+    }
+    .lcd-expr::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 2px;
+      height: 16px;
+      background: var(--lcd-ink);
+      vertical-align: text-bottom;
+      animation: blink 1s steps(2, start) infinite;
+      margin: 0 1px;
+    }
+
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .lcd-result-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      gap: 6px;
+      min-height: 32px;
+    }
+
+    .lcd-result {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.1;
+      text-align: right;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+      letter-spacing: -0.01em;
+    }
+    .lcd-result::-webkit-scrollbar {
+      display: none;
+    }
+
+    .lcd-exp {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--lcd-ink);
+    }
+
+    /* Key Sublabels */
+    .key-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .sub-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      min-height: 12px;
+      padding: 0 2px 2px;
+      font-size: 8.5px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .lbl-shift {
+      color: var(--shift-color);
+    }
+
+    .lbl-alpha {
+      color: var(--alpha-color);
+      margin-left: auto;
+    }
+
+    /* Tactile Buttons */
+    .calc-btn {
+      position: relative;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.06s ease, filter 0.1s ease, box-shadow 0.06s ease;
+      touch-action: manipulation;
+    }
+
+    .calc-btn:active,
+    .calc-btn.pressed {
+      transform: translateY(1.5px) scale(0.97);
+      filter: brightness(0.92);
+    }
+
+    .btn-sci {
+      height: 33px;
+      font-size: 11.5px;
+      color: #f1f5f9;
+      background: linear-gradient(180deg, #323946 0%, #242933 100%);
+      box-shadow: 0 2.5px 0 #12151b, inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-top {
+      height: 31px;
+      font-size: 10.5px;
+      border-radius: 14px;
+      color: #f8fafc;
+      background: linear-gradient(180deg, #4b5563 0%, #374151 100%);
+      box-shadow: 0 2.5px 0 #1f242c, inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    .btn-shift {
+      color: #1c1917;
+      background: linear-gradient(180deg, #f8c471 0%, #d68910 100%);
+      box-shadow: 0 2.5px 0 #7e5109, inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-alpha {
+      color: #fff;
+      background: linear-gradient(180deg, #ec7063 0%, #cb4335 100%);
+      box-shadow: 0 2.5px 0 #78281f, inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-num {
+      height: 44px;
+      font-size: 17px;
+      font-weight: 700;
+      color: #111827;
+      background: linear-gradient(180deg, #f3f4f6 0%, #d1d5db 100%);
+      box-shadow: 0 3px 0 #6b7280, inset 0 1px 0 #ffffff;
+    }
+
+    .btn-op {
+      height: 44px;
+      font-size: 17px;
+      font-weight: 700;
+      color: #f8fafc;
+      background: linear-gradient(180deg, #475569 0%, #334155 100%);
+      box-shadow: 0 3px 0 #1e293b, inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-del {
+      height: 44px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(180deg, #e07a5f 0%, #c0563c 100%);
+      box-shadow: 0 3px 0 #7f311e, inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+
+    .btn-ac {
+      height: 44px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(180deg, #d96b43 0%, #b84a27 100%);
+      box-shadow: 0 3px 0 #742a12, inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+
+    .btn-eq {
+      height: 44px;
+      font-size: 19px;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+      box-shadow: 0 3px 0 #1e3a8a, inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    /* Replay D-Pad */
+    .replay-pad {
+      width: 92px;
+      height: 62px;
+      border-radius: 31px;
+      background: linear-gradient(180deg, #4b5563 0%, #2d3440 100%);
+      box-shadow: 0 3px 0 #161920, inset 0 1px 1px rgba(255, 255, 255, 0.18);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .replay-btn {
+      position: absolute;
+      background: transparent;
+      border: none;
+      color: #e2e8f0;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      touch-action: manipulation;
+    }
+    .replay-btn:active {
+      color: #f5b041;
+      transform: scale(0.9);
+    }
+    .replay-up { top: 2px; left: 50%; transform: translateX(-50%); width: 34px; height: 20px; }
+    .replay-down { bottom: 2px; left: 50%; transform: translateX(-50%); width: 34px; height: 20px; }
+    .replay-left { left: 4px; top: 50%; transform: translateY(-50%); width: 24px; height: 32px; }
+    .replay-right { right: 4px; top: 50%; transform: translateY(-50%); width: 24px; height: 32px; }
+    .replay-center {
+      font-size: 7.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+
+    /* Modal / Drawer */
+    .overlay-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      inset: 0;
+      background: rgba(15, 18, 24, 0.92);
+      backdrop-filter: blur(8px);
+      border-radius: inherit;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+
+    .overlay-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .solar-cell {
+      width: 68px;
+      height: 18px;
+      background: repeating-linear-gradient(
+        90deg,
+        #2b221e 0px,
+        #2b221e 15px,
+        #4a3b34 15px,
+        #4a3b34 16px
+      );
+      border-radius: 3px;
+      border: 1px solid #3f4652;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7);
+    }
+  
+    /* Offline Tailwind-equivalent utilities for Android WebView */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-1 { flex: 1 1 0%; }
+    .grid { display: grid; }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .items-center { align-items: center; }
+    .items-baseline { align-items: baseline; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .gap-1 { gap: 0.25rem; }
+    .gap-1\.5 { gap: 0.375rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-x-1\.5 { column-gap: 0.375rem; }
+    .gap-y-1 { row-gap: 0.25rem; }
+    .gap-x-2 { column-gap: 0.5rem; }
+    .gap-y-1\.5 { row-gap: 0.375rem; }
+    .space-y-2 > * + * { margin-top: 0.5rem; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    .px-0\.5 { padding-left: 0.125rem; padding-right: 0.125rem; }
+    .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-10 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+    .p-2\.5 { padding: 0.625rem; }
+    .pb-2 { padding-bottom: 0.5rem; }
+    .pb-2\.5 { padding-bottom: 0.625rem; }
+    .pr-1 { padding-right: 0.25rem; }
+    .pt-1 { padding-top: 0.25rem; }
+    .mb-1\.5 { margin-bottom: 0.375rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-2\.5 { margin-bottom: 0.625rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mt-0\.5 { margin-top: 0.125rem; }
+    .ml-1 { margin-left: 0.25rem; }
+    .w-4 { width: 1rem; }
+    .w-7 { width: 1.75rem; }
+    .h-7 { height: 1.75rem; }
+    .w-full { width: 100%; }
+    .rounded { border-radius: 0.25rem; }
+    .rounded-md { border-radius: 0.375rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .border { border-width: 1px; border-style: solid; }
+    .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
+    .border-slate-700 { border-color: #334155; }
+    .border-amber-400 { border-color: #fbbf24 !important; }
+    .border-sky-400 { border-color: #38bdf8 !important; }
+    .border-rose-700\/60 { border-color: rgba(190, 18, 60, 0.6); }
+    .bg-slate-700 { background-color: #334155; }
+    .bg-slate-800 { background-color: #1e293b; }
+    .bg-slate-800\/90 { background-color: rgba(30, 41, 59, 0.9); }
+    .bg-slate-800\/80 { background-color: rgba(30, 41, 59, 0.8); }
+    .bg-slate-800\/70 { background-color: rgba(30, 41, 59, 0.7); }
+    .bg-amber-500\/20 { background-color: rgba(245, 158, 11, 0.2) !important; }
+    .bg-sky-500\/20 { background-color: rgba(14, 165, 233, 0.2) !important; }
+    .bg-rose-900\/50 { background-color: rgba(136, 19, 55, 0.5); }
+    .text-white { color: #ffffff; }
+    .text-slate-200 { color: #e2e8f0; }
+    .text-slate-300 { color: #cbd5e1; }
+    .text-slate-400 { color: #94a3b8; }
+    .text-sky-300 { color: #7dd3fc; }
+    .text-sky-200 { color: #bae6fd !important; }
+    .text-rose-200 { color: #fecdd3; }
+    .text-rose-300 { color: #fda4af; }
+    .text-rose-400 { color: #fb7185; }
+    .text-amber-200 { color: #fde68a !important; }
+    .text-amber-400 { color: #fbbf24; }
+    .text-emerald-300 { color: #6ee7b7; }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-xs { font-size: 0.75rem; line-height: 1rem; }
+    .text-\[11px\] { font-size: 11px; }
+    .text-\[10px\] { font-size: 10px; }
+    .text-\[8\.5px\] { font-size: 8.5px; }
+    .font-mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .font-extrabold { font-weight: 800; }
+    .italic { font-style: italic; }
+    .uppercase { text-transform: uppercase; }
+    .tracking-wider { letter-spacing: 0.05em; }
+    .tracking-widest { letter-spacing: 0.1em; }
+    .text-left { text-align: left; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .overflow-y-auto { overflow-y: auto; }
+    .hidden { display: none; }
+    @media (min-width: 640px) { .sm\:block { display: block; } }
+
+  </style>
+</head>
+<body>
+  <main class="calc-shell" role="application" aria-label="Casio fx-82MS Scientific Calculator">
+    <!-- Top Brand & Utility Bar -->
+    <header class="flex items-center justify-between px-1 pb-2">
+      <div>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-sm font-extrabold tracking-wider text-white">CASIO</span>
+          <span class="text-[11px] font-semibold italic text-sky-300">fx-82MS</span>
+        </div>
+        <div class="text-[8.5px] font-semibold tracking-widest text-rose-400 uppercase">S-V.P.A.M.</div>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <div class="solar-cell hidden sm:block" title="Solar Cell"></div>
+        <button id="btn-backlight" type="button" title="Toggle LCD Backlight"
+          class="px-2 py-1 rounded-md bg-slate-800/90 hover:bg-slate-700 text-[10px] font-semibold text-slate-300 border border-slate-700">
+          ☀
+        </button>
+        <button id="btn-sound" type="button" title="Toggle Key Sound"
+          class="px-2 py-1 rounded-md bg-slate-800/90 hover:bg-slate-700 text-[10px] font-semibold text-slate-300 border border-slate-700">
+          🔊
+        </button>
+        <button id="btn-history" type="button" title="Calculation History"
+          class="px-2 py-1 rounded-md bg-slate-800/90 hover:bg-slate-700 text-[10px] font-semibold text-slate-200 border border-slate-700">
+          History
+        </button>
+      </div>
+    </header>
+
+    <!-- 2-Line LCD Display -->
+    <section class="lcd-frame mb-2.5">
+      <div id="lcd-screen" class="lcd-screen">
+        <!-- Status Indicators -->
+        <div class="lcd-indicators">
+          <div class="flex items-center gap-1">
+            <span id="ind-shift" class="ind-pill">S</span>
+            <span id="ind-alpha" class="ind-pill">A</span>
+            <span id="ind-hyp" class="ind-pill">HYP</span>
+            <span id="ind-sto" class="ind-pill">STO</span>
+            <span id="ind-rcl" class="ind-pill">RCL</span>
+            <span id="ind-m" class="ind-pill">M</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span id="ind-mode" class="ind-pill active">COMP</span>
+            <span id="ind-angle" class="ind-pill active">D</span>
+            <span id="ind-fmt" class="ind-pill">NORM</span>
+          </div>
+        </div>
+
+        <!-- Expression Line -->
+        <div id="lcd-expr" class="lcd-expr" aria-live="polite"></div>
+
+        <!-- Result Line -->
+        <div class="lcd-result-row">
+          <div id="lcd-result" class="lcd-result" aria-live="polite">0.</div>
+          <div id="lcd-exp" class="lcd-exp"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Control Row: SHIFT, ALPHA, REPLAY, MODE, ON/CONST -->
+    <section class="flex items-center justify-between gap-2 px-0.5 mb-2">
+      <div class="flex flex-col gap-1.5 flex-1">
+        <div class="grid grid-cols-2 gap-1.5">
+          <div class="key-wrap">
+            <div class="sub-labels"><span class="lbl-shift">SHIFT</span></div>
+            <button type="button" class="calc-btn btn-top btn-shift" data-key="SHIFT">SHIFT</button>
+          </div>
+          <div class="key-wrap">
+            <div class="sub-labels"><span class="lbl-alpha">ALPHA</span></div>
+            <button type="button" class="calc-btn btn-top btn-alpha" data-key="ALPHA">ALPHA</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4-Way Replay Pad -->
+      <div class="replay-pad" aria-label="Replay Navigation">
+        <button type="button" class="replay-btn replay-up" data-key="UP" title="Previous History">▲</button>
+        <button type="button" class="replay-btn replay-down" data-key="DOWN" title="Next History">▼</button>
+        <button type="button" class="replay-btn replay-left" data-key="LEFT" title="Cursor Left">◀</button>
+        <button type="button" class="replay-btn replay-right" data-key="RIGHT" title="Cursor Right">▶</button>
+        <span class="replay-center">REPLAY</span>
+      </div>
+
+      <div class="flex flex-col gap-1.5 flex-1">
+        <div class="grid grid-cols-2 gap-1.5">
+          <div class="key-wrap">
+            <div class="sub-labels"><span class="lbl-shift">CLR</span></div>
+            <button type="button" class="calc-btn btn-top" data-key="MODE">MODE</button>
+          </div>
+          <div class="key-wrap">
+            <div class="sub-labels"><span class="lbl-shift">S⇔D</span></div>
+            <button type="button" class="calc-btn btn-top" data-key="SD_CONV">a b/c↔</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scientific Keys Grid (6 columns x 4 rows) -->
+    <section class="grid grid-cols-6 gap-x-1.5 gap-y-1 mb-2.5">
+      <!-- Row 1 -->
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">x!</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="INV">x⁻¹</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">nPr</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="NCR">nCr</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">Rec(</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="POL">Pol(</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">∛</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="CUBE">x³</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">d/c</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="FRAC">a b/c</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">³√</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="SQRT">√</button>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">√</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="SQR">x²</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">ˣ√</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="POW">^</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">10ˣ</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="LOG">log</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">eˣ</span><span class="lbl-alpha">e</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="LN">ln</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-alpha">A</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="NEG">(-)</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">←</span><span class="lbl-alpha">B</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="DMS">° ' "</button>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-alpha">C</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="HYP">hyp</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">sin⁻¹</span><span class="lbl-alpha">D</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="SIN">sin</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">cos⁻¹</span><span class="lbl-alpha">E</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="COS">cos</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">tan⁻¹</span><span class="lbl-alpha">F</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="TAN">tan</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">STO</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="RCL">RCL</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">←ENG</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="ENG">ENG</button>
+      </div>
+
+      <!-- Row 4 -->
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">%</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="LPAREN">(</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-alpha">X</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="RPAREN">)</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">;</span><span class="lbl-alpha">Y</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="COMMA">,</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">M-</span><span class="lbl-alpha">M</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="MPLUS">M+</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">M=0</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="MC">MC</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">Ran#</span></div>
+        <button type="button" class="calc-btn btn-sci" data-key="PI_KEY">π</button>
+      </div>
+    </section>
+
+    <!-- Main Numpad & Operators (5 columns x 4 rows) -->
+    <section class="grid grid-cols-5 gap-x-2 gap-y-1.5">
+      <!-- Row 1 -->
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="7">7</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="8">8</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="9">9</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">INS</span></div>
+        <button type="button" class="calc-btn btn-del" data-key="DEL">DEL</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">RESET</span></div>
+        <button type="button" class="calc-btn btn-ac" data-key="AC">AC</button>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="4">4</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="5">5</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="6">6</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-op" data-key="MUL">×</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-op" data-key="DIV">÷</button>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="1">1</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="2">2</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-num" data-key="3">3</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-op" data-key="ADD">+</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"></div>
+        <button type="button" class="calc-btn btn-op" data-key="SUB">-</button>
+      </div>
+
+      <!-- Row 4 -->
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">Rnd</span></div>
+        <button type="button" class="calc-btn btn-num" data-key="0">0</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">Ran#</span></div>
+        <button type="button" class="calc-btn btn-num" data-key="DOT">.</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">π</span></div>
+        <button type="button" class="calc-btn btn-num text-sm" data-key="EXP">×10ˣ</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">DRG▸</span></div>
+        <button type="button" class="calc-btn btn-num text-sm" data-key="ANS">Ans</button>
+      </div>
+      <div class="key-wrap">
+        <div class="sub-labels"><span class="lbl-shift">%</span></div>
+        <button type="button" class="calc-btn btn-eq" data-key="EQ">=</button>
+      </div>
+    </section>
+
+    <!-- Mode / Setup Overlay -->
+    <div id="mode-overlay" class="overlay-panel" aria-hidden="true">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2.5 mb-3">
+        <h2 class="text-sm font-bold text-white">MODE / SETUP</h2>
+        <button id="close-mode" type="button" class="px-2.5 py-1 rounded bg-slate-800 text-xs text-slate-300 hover:bg-slate-700">Done</button>
+      </div>
+
+      <div class="space-y-4 overflow-y-auto flex-1 pr-1">
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Angle Unit</div>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" class="mode-opt py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-200" data-angle="DEG">1: Deg</button>
+            <button type="button" class="mode-opt py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-200" data-angle="RAD">2: Rad</button>
+            <button type="button" class="mode-opt py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-200" data-angle="GRAD">3: Gra</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Number Format</div>
+          <div class="grid grid-cols-3 gap-2 mb-2">
+            <button type="button" class="fmt-opt py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-200" data-fmt="NORM">Norm</button>
+            <button type="button" class="fmt-opt py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-200" data-fmt="FIX">Fix</button>
+            <button type="button" class="fmt-opt py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-200" data-fmt="SCI">Sci</button>
+          </div>
+          <div id="digits-row" class="flex items-center justify-between bg-slate-800/70 rounded-lg px-3 py-2 border border-slate-700">
+            <span class="text-xs text-slate-300">Decimal / Sig Digits (0–9)</span>
+            <div class="flex items-center gap-2">
+              <button id="digits-minus" type="button" class="w-7 h-7 rounded bg-slate-700 text-white font-bold">-</button>
+              <span id="digits-val" class="text-sm font-mono font-bold text-amber-400 w-4 text-center">2</span>
+              <button id="digits-plus" type="button" class="w-7 h-7 rounded bg-slate-700 text-white font-bold">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Variables & Memory</div>
+          <div id="vars-grid" class="grid grid-cols-3 gap-1.5 text-[11px] font-mono"></div>
+        </div>
+
+        <div class="pt-1">
+          <button id="btn-clear-all-mem" type="button" class="w-full py-2 rounded-lg bg-rose-900/50 hover:bg-rose-800/60 border border-rose-700/60 text-xs font-semibold text-rose-200">
+            Initialize All (Clear Memory & Variables)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Overlay -->
+    <div id="history-overlay" class="overlay-panel" aria-hidden="true">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2.5 mb-2.5">
+        <h2 class="text-sm font-bold text-white">Calculation History</h2>
+        <div class="flex items-center gap-2">
+          <button id="clear-history" type="button" class="px-2 py-1 rounded bg-rose-900/50 text-[11px] text-rose-200 hover:bg-rose-800/60">Clear</button>
+          <button id="close-history" type="button" class="px-2.5 py-1 rounded bg-slate-800 text-xs text-slate-300 hover:bg-slate-700">Done</button>
+        </div>
+      </div>
+      <div id="history-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      // --- State ---
+      const state = {
+        expr: '',
+        cursor: 0,
+        resultStr: '0.',
+        resultExp: '',
+        lastNumericResult: 0,
+        ans: 0,
+        memory: 0,
+        vars: { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, X: 0, Y: 0 },
+        shift: false,
+        alpha: false,
+        hyp: false,
+        stoMode: false,
+        rclMode: false,
+        angleUnit: 'DEG', // DEG | RAD | GRAD
+        formatMode: 'NORM', // NORM | FIX | SCI
+        formatDigits: 2,
+        justEvaluated: false,
+        inError: false,
+        fractionView: false,
+        dmsView: false,
+        engOffset: 0,
+        soundEnabled: false,
+        backlight: true,
+        history: [],
+        historyIdx: -1
+      };
+
+      // Load saved settings/history safely
+      try {
+        const saved = localStorage.getItem('casio_fx82_state_v1');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.history)) state.history = parsed.history.slice(0, 40);
+          if (['DEG', 'RAD', 'GRAD'].includes(parsed.angleUnit)) state.angleUnit = parsed.angleUnit;
+          if (typeof parsed.memory === 'number' && Number.isFinite(parsed.memory)) state.memory = parsed.memory;
+          if (typeof parsed.backlight === 'boolean') state.backlight = parsed.backlight;
+        }
+      } catch (_) {}
+
+      function persistState() {
+        try {
+          localStorage.setItem('casio_fx82_state_v1', JSON.stringify({
+            history: state.history.slice(0, 40),
+            angleUnit: state.angleUnit,
+            memory: state.memory,
+            backlight: state.backlight
+          }));
+        } catch (_) {}
+      }
+
+      // --- Web Audio Tactile Click ---
+      let audioCtx = null;
+      function playClick() {
+        if (!state.soundEnabled) return;
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(680, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.025);
+          gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.025);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.028);
+        } catch (_) {}
+      }
+
+      // --- DOM Refs ---
+      const lcdScreen = document.getElementById('lcd-screen');
+      const lcdExpr = document.getElementById('lcd-expr');
+      const lcdResult = document.getElementById('lcd-result');
+      const lcdExp = document.getElementById('lcd-exp');
+      const indShift = document.getElementById('ind-shift');
+      const indAlpha = document.getElementById('ind-alpha');
+      const indHyp = document.getElementById('ind-hyp');
+      const indSto = document.getElementById('ind-sto');
+      const indRcl = document.getElementById('ind-rcl');
+      const indM = document.getElementById('ind-m');
+      const indAngle = document.getElementById('ind-angle');
+      const indFmt = document.getElementById('ind-fmt');
+      const modeOverlay = document.getElementById('mode-overlay');
+      const historyOverlay = document.getElementById('history-overlay');
+      const historyList = document.getElementById('history-list');
+      const varsGrid = document.getElementById('vars-grid');
+      const digitsVal = document.getElementById('digits-val');
+      const btnSound = document.getElementById('btn-sound');
+      const btnBacklight = document.getElementById('btn-backlight');
+
+      // --- Math & Formatting Helpers ---
+      function toRadians(x) {
+        if (state.angleUnit === 'DEG') return (x * Math.PI) / 180;
+        if (state.angleUnit === 'GRAD') return (x * Math.PI) / 200;
+        return x;
+      }
+
+      function fromRadians(r) {
+        if (state.angleUnit === 'DEG') return (r * 180) / Math.PI;
+        if (state.angleUnit === 'GRAD') return (r * 200) / Math.PI;
+        return r;
+      }
+
+      function cleanZero(n) {
+        if (!Number.isFinite(n)) return n;
+        if (Math.abs(n) < 1e-13) return 0;
+        return parseFloat(n.toPrecision(12));
+      }
+
+      function factorial(n) {
+        if (!Number.isFinite(n) || n < 0 || Math.floor(n) !== n || n > 170) {
+          throw new Error('Math ERROR');
+        }
+        let res = 1;
+        for (let i = 2; i <= n; i++) res *= i;
+        return res;
+      }
+
+      function nPr(n, r) {
+        if (n < 0 || r < 0 || Math.floor(n) !== n || Math.floor(r) !== r || r > n || n > 170) {
+          throw new Error('Math ERROR');
+        }
+        let res = 1;
+        for (let i = 0; i < r; i++) res *= (n - i);
+        return res;
+      }
+
+      function nCr(n, r) {
+        if (n < 0 || r < 0 || Math.floor(n) !== n || Math.floor(r) !== r || r > n || n > 170) {
+          throw new Error('Math ERROR');
+        }
+        r = Math.min(r, n - r);
+        let res = 1;
+        for (let i = 1; i <= r; i++) {
+          res = (res * (n - r + i)) / i;
+        }
+        return Math.round(res);
+      }
+
+      function formatResult(num) {
+        if (!Number.isFinite(num)) throw new Error('Math ERROR');
+        const val = cleanZero(num);
+        if (val === 0) {
+          if (state.formatMode === 'FIX') return { main: (0).toFixed(state.formatDigits), exp: '' };
+          return { main: '0.', exp: '' };
+        }
+
+        if (state.formatMode === 'FIX') {
+          if (Math.abs(val) >= 1e10) {
+            return formatSci(val, state.formatDigits);
+          }
+          return { main: val.toFixed(state.formatDigits), exp: '' };
+        }
+
+        if (state.formatMode === 'SCI') {
+          return formatSci(val, Math.max(0, state.formatDigits));
+        }
+
+        // NORM mode
+        const abs = Math.abs(val);
+        if (abs >= 1e10 || (abs > 0 && abs < 1e-9)) {
+          return formatSci(val, 9);
+        }
+        let s = String(parseFloat(val.toPrecision(10)));
+        if (!s.includes('.')) s += '.';
+        return { main: s, exp: '' };
+      }
+
+      function formatSci(val, sigDigits) {
+        const expStr = val.toExponential(Math.min(9, sigDigits));
+        const [mant, expPart] = expStr.split('e');
+        const cleanMant = state.formatMode === 'SCI' ? mant : mant.replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '.');
+        const eNum = parseInt(expPart, 10);
+        return { main: cleanMant, exp: `×10^${eNum}` };
+      }
+
+      function toFraction(val) {
+        if (!Number.isFinite(val)) return null;
+        const sign = val < 0 ? '-' : '';
+        const abs = Math.abs(val);
+        const whole = Math.floor(abs + 1e-12);
+        const frac = abs - whole;
+        if (frac < 1e-10) return `${sign}${whole}`;
+
+        let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
+        let b = frac;
+        for (let i = 0; i < 20; i++) {
+          const a = Math.floor(b);
+          const auxH = a * h1 + h2;
+          const auxK = a * k1 + k2;
+          if (auxK > 9999) break;
+          h2 = h1; h1 = auxH;
+          k2 = k1; k1 = auxK;
+          if (Math.abs(frac - h1 / k1) < 1e-10) break;
+          b = 1 / (b - a);
+        }
+        if (k1 <= 1 || Math.abs(frac - h1 / k1) > 1e-6) return null;
+        if (whole === 0) return `${sign}${h1}┘${k1}`;
+        return `${sign}${whole}┘${h1}┘${k1}`;
+      }
+
+      function toDMS(val) {
+        const sign = val < 0 ? '-' : '';
+        const abs = Math.abs(val);
+        const d = Math.floor(abs);
+        const mFloat = (abs - d) * 60;
+        const m = Math.floor(mFloat + 1e-9);
+        const s = cleanZero((mFloat - m) * 60);
+        const sDisp = Number.isInteger(s) ? s : s.toFixed(2);
+        return `${sign}${d}°${m}'${sDisp}"`;
+      }
+
+      // --- Tokenizer & Recursive Descent Parser ---
+      function evaluateExpression(rawExpr) {
+        if (!rawExpr.trim()) return 0;
+
+        // Pre-normalize Casio symbols into tokens
+        const tokens = tokenize(rawExpr);
+        let pos = 0;
+
+        function peek() { return tokens[pos]; }
+        function consume() { return tokens[pos++]; }
+
+        function parseExpr() {
+          let left = parseTerm();
+          while (peek() && (peek().type === 'OP' && (peek().val === '+' || peek().val === '-'))) {
+            const op = consume().val;
+            const right = parseTerm();
+            left = op === '+' ? left + right : left - right;
+          }
+          return left;
+        }
+
+        function parseTerm() {
+          let left = parseCombinatoric();
+          while (peek()) {
+            const t = peek();
+            if (t.type === 'OP' && (t.val === '×' || t.val === '÷')) {
+              consume();
+              const right = parseCombinatoric();
+              if (t.val === '÷') {
+                if (right === 0) throw new Error('Math ERROR');
+                left = left / right;
+              } else {
+                left = left * right;
+              }
+            } else if (
+              t.type === 'LPAREN' ||
+              t.type === 'FUNC' ||
+              t.type === 'VAR' ||
+              t.type === 'CONST'
+            ) {
+              // Implicit multiplication (e.g. 2π, 2(3+4), 2sin(30))
+              const right = parseCombinatoric();
+              left = left * right;
+            } else {
+              break;
+            }
+          }
+          return left;
+        }
+
+        function parseCombinatoric() {
+          let left = parseUnary();
+          while (peek() && peek().type === 'OP' && (peek().val === 'P' || peek().val === 'C')) {
+            const op = consume().val;
+            const right = parseUnary();
+            left = op === 'P' ? nPr(left, right) : nCr(left, right);
+          }
+          return left;
+        }
+
+        function parseUnary() {
+          if (peek() && peek().type === 'OP' && (peek().val === '-' || peek().val === '+' || peek().val === 'neg')) {
+            const op = consume().val;
+            const val = parseUnary();
+            return (op === '-' || op === 'neg') ? -val : val;
+          }
+          return parsePower();
+        }
+
+        function parsePower() {
+          let base = parsePostfix();
+          if (peek() && peek().type === 'OP' && (peek().val === '^' || peek().val === 'ˣ√')) {
+            const op = consume().val;
+            const exp = parseUnary();
+            if (op === '^') {
+              const res = Math.pow(base, exp);
+              if (!Number.isFinite(res)) throw new Error('Math ERROR');
+              return res;
+            } else {
+              if (base === 0) throw new Error('Math ERROR');
+              const res = Math.pow(exp, 1 / base);
+              if (!Number.isFinite(res)) throw new Error('Math ERROR');
+              return res;
+            }
+          }
+          return base;
+        }
+
+        function parsePostfix() {
+          let val = parsePrimary();
+          while (peek() && peek().type === 'POSTFIX') {
+            const p = consume().val;
+            if (p === '²') val = val * val;
+            else if (p === '³') val = val * val * val;
+            else if (p === '⁻¹') {
+              if (val === 0) throw new Error('Math ERROR');
+              val = 1 / val;
+            } else if (p === '!') val = factorial(val);
+            else if (p === '%') val = val / 100;
+          }
+          return val;
+        }
+
+        function parsePrimary() {
+          const t = peek();
+          if (!t) throw new Error('Syntax ERROR');
+
+          if (t.type === 'NUM') {
+            consume();
+            return t.val;
+          }
+
+          if (t.type === 'CONST') {
+            consume();
+            if (t.val === 'π') return Math.PI;
+            if (t.val === 'e') return Math.E;
+            if (t.val === 'Ans') return state.ans;
+            if (t.val === 'Ran#') return parseFloat(Math.random().toFixed(3));
+          }
+
+          if (t.type === 'VAR') {
+            consume();
+            if (t.val === 'M') return state.memory;
+            return state.vars[t.val] ?? 0;
+          }
+
+          if (t.type === 'LPAREN') {
+            consume();
+            const val = parseExpr();
+            if (peek() && peek().type === 'RPAREN') consume();
+            return val;
+          }
+
+          if (t.type === 'FUNC') {
+            const fn = consume().val;
+
+            // Multi-arg functions: Pol(x,y) and Rec(r,θ)
+            if (fn === 'Pol(' || fn === 'Rec(') {
+              const x = parseExpr();
+              if (!peek() || peek().type !== 'COMMA') throw new Error('Syntax ERROR');
+              consume();
+              const y = parseExpr();
+              if (peek() && peek().type === 'RPAREN') consume();
+              if (fn === 'Pol(') {
+                const r = Math.hypot(x, y);
+                const th = fromRadians(Math.atan2(y, x));
+                state.vars.X = cleanZero(r);
+                state.vars.Y = cleanZero(th);
+                return r;
+              } else {
+                const rad = toRadians(y);
+                const rx = x * Math.cos(rad);
+                const ry = x * Math.sin(rad);
+                state.vars.X = cleanZero(rx);
+                state.vars.Y = cleanZero(ry);
+                return rx;
+              }
+            }
+
+            // Functions that open with '('
+            if (fn.endsWith('(')) {
+              const arg = parseExpr();
+              if (peek() && peek().type === 'RPAREN') consume();
+              return applyFunc(fn.slice(0, -1), arg);
+            }
+
+            // Prefix functions without forced paren: sin 30, √9, log 100
+            const arg = parseUnary();
+            return applyFunc(fn, arg);
+          }
+
+          throw new Error('Syntax ERROR');
+        }
+
+        const result = parseExpr();
+        if (pos < tokens.length) throw new Error('Syntax ERROR');
+        if (!Number.isFinite(result)) throw new Error('Math ERROR');
+        return result;
+      }
+
+      function applyFunc(name, x) {
+        switch (name) {
+          case 'sin': return Math.sin(toRadians(x));
+          case 'cos': return Math.cos(toRadians(x));
+          case 'tan': {
+            const r = toRadians(x);
+            if (Math.abs(Math.cos(r)) < 1e-15) throw new Error('Math ERROR');
+            return Math.tan(r);
+          }
+          case 'sin⁻¹': {
+            if (x < -1 || x > 1) throw new Error('Math ERROR');
+            return fromRadians(Math.asin(x));
+          }
+          case 'cos⁻¹': {
+            if (x < -1 || x > 1) throw new Error('Math ERROR');
+            return fromRadians(Math.acos(x));
+          }
+          case 'tan⁻¹': return fromRadians(Math.atan(x));
+          case 'sinh': return Math.sinh(x);
+          case 'cosh': return Math.cosh(x);
+          case 'tanh': return Math.tanh(x);
+          case 'sinh⁻¹': return Math.asinh(x);
+          case 'cosh⁻¹': {
+            if (x < 1) throw new Error('Math ERROR');
+            return Math.acosh(x);
+          }
+          case 'tanh⁻¹': {
+            if (x <= -1 || x >= 1) throw new Error('Math ERROR');
+            return Math.atanh(x);
+          }
+          case 'log': {
+            if (x <= 0) throw new Error('Math ERROR');
+            return Math.log10(x);
+          }
+          case 'ln': {
+            if (x <= 0) throw new Error('Math ERROR');
+            return Math.log(x);
+          }
+          case '10^': return Math.pow(10, x);
+          case 'e^': return Math.exp(x);
+          case '√': {
+            if (x < 0) throw new Error('Math ERROR');
+            return Math.sqrt(x);
+          }
+          case '∛': return Math.cbrt(x);
+          case 'Rnd': return parseFloat(x.toPrecision(10));
+          default: throw new Error('Syntax ERROR');
+        }
+      }
+
+      function tokenize(str) {
+        const tokens = [];
+        let i = 0;
+
+        // Sorted longest-first for unambiguous matching
+        const funcNames = [
+          'sinh⁻¹(', 'cosh⁻¹(', 'tanh⁻¹(',
+          'sin⁻¹(', 'cos⁻¹(', 'tan⁻¹(',
+          'sinh⁻¹', 'cosh⁻¹', 'tanh⁻¹',
+          'sin⁻¹', 'cos⁻¹', 'tan⁻¹',
+          'sinh(', 'cosh(', 'tanh(',
+          'sinh', 'cosh', 'tanh',
+          'sin(', 'cos(', 'tan(',
+          'sin', 'cos', 'tan',
+          'Pol(', 'Rec(', 'Rnd(',
+          'log(', 'ln(', 'log', 'ln',
+          '10^(', 'e^(', '10^', 'e^',
+          '√(', '∛(', '√', '∛'
+        ];
+
+        while (i < str.length) {
+          const ch = str[i];
+          if (ch === ' ') { i++; continue; }
+
+          // Mixed / regular fraction literal like 1┘2 or 1┘2┘3 or DMS like 12°30'45"
+          if (/\d/.test(ch) || (ch === '.' && /\d/.test(str[i + 1] || ''))) {
+            let numStr = '';
+            while (i < str.length && /[\d.]/.test(str[i])) {
+              numStr += str[i++];
+            }
+
+            // Scientific E notation via ×10ˣ token (E)
+            if (str[i] === 'E') {
+              i++;
+              let expSign = '';
+              if (str[i] === '-' || str[i] === '+') expSign = str[i++];
+              let expDigits = '';
+              while (i < str.length && /\d/.test(str[i])) expDigits += str[i++];
+              if (!expDigits) throw new Error('Syntax ERROR');
+              tokens.push({ type: 'NUM', val: parseFloat(`${numStr}e${expSign}${expDigits}`) });
+              continue;
+            }
+
+            // Fraction notation ┘
+            if (str[i] === '┘') {
+              const parts = [parseFloat(numStr)];
+              while (str[i] === '┘') {
+                i++;
+                let nextPart = '';
+                while (i < str.length && /\d/.test(str[i])) nextPart += str[i++];
+                if (!nextPart) throw new Error('Syntax ERROR');
+                parts.push(parseFloat(nextPart));
+              }
+              if (parts.length === 2) {
+                if (parts[1] === 0) throw new Error('Math ERROR');
+                tokens.push({ type: 'NUM', val: parts[0] / parts[1] });
+              } else if (parts.length === 3) {
+                if (parts[2] === 0) throw new Error('Math ERROR');
+                tokens.push({ type: 'NUM', val: parts[0] + parts[1] / parts[2] });
+              } else {
+                throw new Error('Syntax ERROR');
+              }
+              continue;
+            }
+
+            // DMS notation °
+            if (str[i] === '°') {
+              let deg = parseFloat(numStr);
+              let min = 0, sec = 0;
+              i++; // skip °
+              let mStr = '';
+              while (i < str.length && /[\d.]/.test(str[i])) mStr += str[i++];
+              if (mStr) {
+                min = parseFloat(mStr);
+                if (str[i] === '°' || str[i] === "'") i++;
+              }
+              let sStr = '';
+              while (i < str.length && /[\d.]/.test(str[i])) sStr += str[i++];
+              if (sStr) {
+                sec = parseFloat(sStr);
+                if (str[i] === '°' || str[i] === '"') i++;
+              }
+              tokens.push({ type: 'NUM', val: deg + min / 60 + sec / 3600 });
+              continue;
+            }
+
+            const numVal = parseFloat(numStr);
+            if (Number.isNaN(numVal)) throw new Error('Syntax ERROR');
+            tokens.push({ type: 'NUM', val: numVal });
+            continue;
+          }
+
+          // Constants
+          if (str.startsWith('Ans', i)) {
+            tokens.push({ type: 'CONST', val: 'Ans' }); i += 3; continue;
+          }
+          if (str.startsWith('Ran#', i)) {
+            tokens.push({ type: 'CONST', val: 'Ran#' }); i += 4; continue;
+          }
+          if (ch === 'π') {
+            tokens.push({ type: 'CONST', val: 'π' }); i++; continue;
+          }
+
+          // Functions
+          let matchedFunc = null;
+          for (const f of funcNames) {
+            if (str.startsWith(f, i)) {
+              matchedFunc = f;
+              break;
+            }
+          }
+          if (matchedFunc) {
+            tokens.push({ type: 'FUNC', val: matchedFunc });
+            i += matchedFunc.length;
+            continue;
+          }
+
+          if (ch === 'e') {
+            tokens.push({ type: 'CONST', val: 'e' }); i++; continue;
+          }
+
+          // Variables A-F, X, Y, M
+          if ('ABCDEFXYM'.includes(ch)) {
+            tokens.push({ type: 'VAR', val: ch }); i++; continue;
+          }
+
+          // Postfix operators
+          if (str.startsWith('⁻¹', i)) {
+            tokens.push({ type: 'POSTFIX', val: '⁻¹' }); i += 2; continue;
+          }
+          if ('²³!%'.includes(ch)) {
+            tokens.push({ type: 'POSTFIX', val: ch }); i++; continue;
+          }
+
+          // N-th root ˣ√
+          if (str.startsWith('ˣ√', i)) {
+            tokens.push({ type: 'OP', val: 'ˣ√' }); i += 2; continue;
+          }
+
+          // Binary Operators
+          if ('+-×÷^PC'.includes(ch)) {
+            tokens.push({ type: 'OP', val: ch }); i++; continue;
+          }
+          if (ch === '⁻') {
+            tokens.push({ type: 'OP', val: 'neg' }); i++; continue;
+          }
+          if (ch === '(') {
+            tokens.push({ type: 'LPAREN' }); i++; continue;
+          }
+          if (ch === ')') {
+            tokens.push({ type: 'RPAREN' }); i++; continue;
+          }
+          if (ch === ',') {
+            tokens.push({ type: 'COMMA' }); i++; continue;
+          }
+
+          throw new Error('Syntax ERROR');
+        }
+        return tokens;
+      }
+
+      // --- Editing & Display ---
+      function insertAtCursor(str) {
+        if (state.inError) {
+          state.expr = '';
+          state.cursor = 0;
+          state.inError = false;
+        }
+        if (state.justEvaluated) {
+          // If starting with binary operator, continue with Ans
+          const isContinuation = /^[+\-×÷^²³!%PC]|^⁻¹|^ˣ√/.test(str);
+          if (isContinuation) {
+            state.expr = 'Ans';
+            state.cursor = 3;
+          } else {
+            state.expr = '';
+            state.cursor = 0;
+          }
+          state.justEvaluated = false;
+        }
+        state.expr = state.expr.slice(0, state.cursor) + str + state.expr.slice(state.cursor);
+        state.cursor += str.length;
+      }
+
+      function deleteAtCursor() {
+        if (state.inError) {
+          state.expr = '';
+          state.cursor = 0;
+          state.inError = false;
+          render();
+          return;
+        }
+        if (state.cursor === 0) return;
+
+        // Smart token delete (remove whole function name if at end of one)
+        const before = state.expr.slice(0, state.cursor);
+        const smartTokens = [
+          'sinh⁻¹(', 'cosh⁻¹(', 'tanh⁻¹(', 'sin⁻¹(', 'cos⁻¹(', 'tan⁻¹(',
+          'sinh(', 'cosh(', 'tanh(', 'sin(', 'cos(', 'tan(',
+          'Pol(', 'Rec(', 'Rnd(', 'log(', 'ln(', '10^(', 'e^(',
+          'Ran#', 'Ans', '⁻¹', 'ˣ√', '√(', '∛('
+        ];
+        for (const tok of smartTokens) {
+          if (before.endsWith(tok)) {
+            state.expr = before.slice(0, -tok.length) + state.expr.slice(state.cursor);
+            state.cursor -= tok.length;
+            state.justEvaluated = false;
+            return;
+          }
+        }
+        state.expr = before.slice(0, -1) + state.expr.slice(state.cursor);
+        state.cursor -= 1;
+        state.justEvaluated = false;
+      }
+
+      function render() {
+        // Indicators
+        indShift.classList.toggle('shift-active', state.shift);
+        indAlpha.classList.toggle('alpha-active', state.alpha);
+        indHyp.classList.toggle('active', state.hyp);
+        indSto.classList.toggle('active', state.stoMode);
+        indRcl.classList.toggle('active', state.rclMode);
+        indM.classList.toggle('active', Math.abs(state.memory) > 1e-13);
+        indAngle.textContent = state.angleUnit === 'DEG' ? 'D' : state.angleUnit === 'RAD' ? 'R' : 'G';
+        indFmt.textContent = state.formatMode === 'NORM' ? 'NORM' : `${state.formatMode}${state.formatDigits}`;
+        indFmt.classList.toggle('active', state.formatMode !== 'NORM');
+        lcdScreen.classList.toggle('backlight', state.backlight);
+
+        // Expression with cursor
+        const left = escapeHtml(state.expr.slice(0, state.cursor));
+        const right = escapeHtml(state.expr.slice(state.cursor));
+        lcdExpr.innerHTML = `${left}<span class="cursor-blink"></span>${right}`;
+        lcdExpr.scrollLeft = lcdExpr.scrollWidth;
+
+        // Result
+        lcdResult.textContent = state.resultStr;
+        lcdExp.textContent = state.resultExp;
+      }
+
+      function escapeHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      // --- Evaluation ---
+      function runEvaluate(asPercent = false) {
+        if (!state.expr.trim()) return;
+        let evalExpr = state.expr;
+        if (asPercent && !evalExpr.endsWith('%')) {
+          evalExpr += '%';
+          state.expr = evalExpr;
+          state.cursor = evalExpr.length;
+        }
+
+        try {
+          const val = evaluateExpression(evalExpr);
+          state.lastNumericResult = val;
+          state.ans = cleanZero(val);
+          state.fractionView = false;
+          state.dmsView = false;
+          state.engOffset = 0;
+          const fmt = formatResult(val);
+          state.resultStr = fmt.main;
+          state.resultExp = fmt.exp;
+          state.justEvaluated = true;
+          state.inError = false;
+
+          // Record history
+          state.history.unshift({
+            expr: evalExpr,
+            result: fmt.exp ? `${fmt.main}${fmt.exp}` : fmt.main,
+            numeric: state.ans
+          });
+          if (state.history.length > 40) state.history.pop();
+          state.historyIdx = -1;
+          persistState();
+        } catch (err) {
+          state.inError = true;
+          state.resultStr = err.message || 'Syntax ERROR';
+          state.resultExp = '';
+        }
+      }
+
+      // --- Key Handler ---
+      function handleKey(key) {
+        playClick();
+
+        // Modifier toggles
+        if (key === 'SHIFT') {
+          state.shift = !state.shift;
+          state.alpha = false;
+          render();
+          return;
+        }
+        if (key === 'ALPHA') {
+          state.alpha = !state.alpha;
+          state.shift = false;
+          render();
+          return;
+        }
+        if (key === 'HYP' && !state.alpha) {
+          state.hyp = !state.hyp;
+          render();
+          return;
+        }
+
+        // Variable mapping when ALPHA / STO / RCL is active
+        const alphaMap = {
+          NEG: 'A',
+          DMS: 'B',
+          HYP: 'C',
+          SIN: 'D',
+          COS: 'E',
+          TAN: 'F',
+          RPAREN: 'X',
+          COMMA: 'Y',
+          MPLUS: 'M'
+        };
+
+        if ((state.stoMode || state.rclMode) && alphaMap[key]) {
+          const varName = alphaMap[key];
+          if (state.stoMode) {
+            if (state.expr.trim() && !state.justEvaluated) runEvaluate();
+            if (!state.inError) {
+              if (varName === 'M') state.memory = state.ans;
+              else state.vars[varName] = state.ans;
+              state.expr = `${state.ans}→${varName}`;
+              state.cursor = state.expr.length;
+              state.justEvaluated = true;
+              persistState();
+            }
+            state.stoMode = false;
+          } else {
+            const v = varName === 'M' ? state.memory : (state.vars[varName] ?? 0);
+            insertAtCursor(varName);
+            const fmt = formatResult(v);
+            state.resultStr = fmt.main;
+            state.resultExp = fmt.exp;
+            state.rclMode = false;
+          }
+          state.shift = false;
+          state.alpha = false;
+          render();
+          return;
+        }
+
+        if (state.alpha && alphaMap[key]) {
+          insertAtCursor(alphaMap[key]);
+          state.alpha = false;
+          render();
+          return;
+        }
+        if (state.alpha && key === 'LN') {
+          insertAtCursor('e');
+          state.alpha = false;
+          render();
+          return;
+        }
+
+        const wasShift = state.shift;
+        state.shift = false;
+        state.alpha = false;
+        state.stoMode = false;
+        state.rclMode = false;
+
+        switch (key) {
+          case 'UP':
+            if (state.history.length > 0) {
+              state.historyIdx = Math.min(state.historyIdx + 1, state.history.length - 1);
+              const item = state.history[state.historyIdx];
+              state.expr = item.expr;
+              state.cursor = state.expr.length;
+              state.justEvaluated = false;
+            }
+            break;
+          case 'DOWN':
+            if (state.historyIdx > 0) {
+              state.historyIdx -= 1;
+              const item = state.history[state.historyIdx];
+              state.expr = item.expr;
+              state.cursor = state.expr.length;
+              state.justEvaluated = false;
+            } else {
+              state.historyIdx = -1;
+              state.expr = '';
+              state.cursor = 0;
+            }
+            break;
+          case 'LEFT':
+            state.inError = false;
+            state.justEvaluated = false;
+            state.cursor = Math.max(0, state.cursor - 1);
+            break;
+          case 'RIGHT':
+            state.inError = false;
+            state.justEvaluated = false;
+            state.cursor = Math.min(state.expr.length, state.cursor + 1);
+            break;
+
+          case 'MODE':
+            if (wasShift) {
+              clearAllMemory();
+            } else {
+              openModeModal();
+            }
+            break;
+
+          case 'SD_CONV':
+            toggleFractionDisplay();
+            break;
+
+          case 'AC':
+            if (wasShift) {
+              clearAllMemory();
+            } else {
+              state.expr = '';
+              state.cursor = 0;
+              state.resultStr = '0.';
+              state.resultExp = '';
+              state.inError = false;
+              state.justEvaluated = false;
+              state.hyp = false;
+            }
+            break;
+
+          case 'DEL':
+            deleteAtCursor();
+            break;
+
+          case 'EQ':
+            runEvaluate(wasShift);
+            break;
+
+          case '0': case '1': case '2': case '3': case '4':
+          case '5': case '6': case '7': case '8': case '9':
+            if (wasShift && key === '0') {
+              insertAtCursor('Rnd(');
+            } else {
+              insertAtCursor(key);
+            }
+            break;
+
+          case 'DOT':
+            if (wasShift) insertAtCursor('Ran#');
+            else insertAtCursor('.');
+            break;
+
+          case 'EXP':
+            if (wasShift) insertAtCursor('π');
+            else insertAtCursor('E');
+            break;
+
+          case 'PI_KEY':
+            if (wasShift) insertAtCursor('Ran#');
+            else insertAtCursor('π');
+            break;
+
+          case 'ANS':
+            if (wasShift) {
+              // Cycle DEG -> RAD -> GRAD
+              const order = ['DEG', 'RAD', 'GRAD'];
+              state.angleUnit = order[(order.indexOf(state.angleUnit) + 1) % 3];
+              persistState();
+            } else {
+              insertAtCursor('Ans');
+            }
+            break;
+
+          case 'ADD': insertAtCursor('+'); break;
+          case 'SUB': insertAtCursor('-'); break;
+          case 'MUL': insertAtCursor('×'); break;
+          case 'DIV': insertAtCursor('÷'); break;
+          case 'NEG': insertAtCursor('⁻'); break;
+
+          case 'LPAREN':
+            if (wasShift) insertAtCursor('%');
+            else insertAtCursor('(');
+            break;
+          case 'RPAREN': insertAtCursor(')'); break;
+          case 'COMMA': insertAtCursor(','); break;
+
+          case 'INV': insertAtCursor(wasShift ? '!' : '⁻¹'); break;
+          case 'NCR': insertAtCursor(wasShift ? 'P' : 'C'); break;
+          case 'POL': insertAtCursor(wasShift ? 'Rec(' : 'Pol('); break;
+          case 'CUBE': insertAtCursor(wasShift ? '∛(' : '³'); break;
+          case 'FRAC': insertAtCursor('┘'); break;
+          case 'SQRT': insertAtCursor(wasShift ? '∛(' : '√('); break;
+          case 'SQR': insertAtCursor(wasShift ? '√(' : '²'); break;
+          case 'POW': insertAtCursor(wasShift ? 'ˣ√' : '^'); break;
+          case 'LOG': insertAtCursor(wasShift ? '10^(' : 'log('); break;
+          case 'LN': insertAtCursor(wasShift ? 'e^(' : 'ln('); break;
+
+          case 'SIN':
+          case 'COS':
+          case 'TAN': {
+            const base = key.toLowerCase();
+            const hypStr = state.hyp ? 'h' : '';
+            const invStr = wasShift ? '⁻¹' : '';
+            insertAtCursor(`${base}${hypStr}${invStr}(`);
+            state.hyp = false;
+            break;
+          }
+
+          case 'DMS':
+            if (wasShift && state.justEvaluated) {
+              state.dmsView = !state.dmsView;
+              if (state.dmsView) {
+                state.resultStr = toDMS(state.lastNumericResult);
+                state.resultExp = '';
+              } else {
+                const fmt = formatResult(state.lastNumericResult);
+                state.resultStr = fmt.main;
+                state.resultExp = fmt.exp;
+              }
+            } else {
+              insertAtCursor('°');
+            }
+            break;
+
+          case 'RCL':
+            if (wasShift) state.stoMode = true;
+            else state.rclMode = true;
+            break;
+
+          case 'ENG':
+            if (state.justEvaluated && !state.inError) {
+              applyEngStep(wasShift ? -3 : 3);
+            }
+            break;
+
+          case 'MPLUS':
+            if (state.expr.trim() && !state.justEvaluated) runEvaluate();
+            if (!state.inError) {
+              state.memory += wasShift ? -state.ans : state.ans;
+              state.memory = cleanZero(state.memory);
+              persistState();
+            }
+            break;
+
+          case 'MC':
+            state.memory = 0;
+            persistState();
+            break;
+        }
+
+        render();
+      }
+
+      function toggleFractionDisplay() {
+        if (state.inError || !Number.isFinite(state.lastNumericResult)) return;
+        state.fractionView = !state.fractionView;
+        if (state.fractionView) {
+          const f = toFraction(state.lastNumericResult);
+          if (f) {
+            state.resultStr = f;
+            state.resultExp = '';
+            return;
+          }
+          state.fractionView = false;
+        }
+        const fmt = formatResult(state.lastNumericResult);
+        state.resultStr = fmt.main;
+        state.resultExp = fmt.exp;
+      }
+
+      function applyEngStep(delta) {
+        const val = state.lastNumericResult;
+        if (val === 0) return;
+        const baseExp = Math.floor(Math.log10(Math.abs(val)) / 3) * 3;
+        if (state.engOffset === 0 && !state.resultExp) {
+          state.engOffset = baseExp;
+        } else {
+          state.engOffset += delta;
+        }
+        const mant = cleanZero(val / Math.pow(10, state.engOffset));
+        state.resultStr = String(mant);
+        state.resultExp = `×10^${state.engOffset}`;
+      }
+
+      function clearAllMemory() {
+        state.memory = 0;
+        state.ans = 0;
+        state.vars = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, X: 0, Y: 0 };
+        state.expr = '';
+        state.cursor = 0;
+        state.resultStr = '0.';
+        state.resultExp = '';
+        state.inError = false;
+        persistState();
+      }
+
+      // --- Overlays ---
+      function openModeModal() {
+        updateModeModalUI();
+        modeOverlay.classList.add('open');
+        modeOverlay.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModeModal() {
+        modeOverlay.classList.remove('open');
+        modeOverlay.setAttribute('aria-hidden', 'true');
+      }
+
+      function updateModeModalUI() {
+        document.querySelectorAll('.mode-opt').forEach(btn => {
+          const active = btn.dataset.angle === state.angleUnit;
+          btn.classList.toggle('border-amber-400', active);
+          btn.classList.toggle('bg-amber-500/20', active);
+          btn.classList.toggle('text-amber-200', active);
+        });
+        document.querySelectorAll('.fmt-opt').forEach(btn => {
+          const active = btn.dataset.fmt === state.formatMode;
+          btn.classList.toggle('border-sky-400', active);
+          btn.classList.toggle('bg-sky-500/20', active);
+          btn.classList.toggle('text-sky-200', active);
+        });
+        digitsVal.textContent = String(state.formatDigits);
+
+        const allVars = { ...state.vars, M: state.memory, Ans: state.ans };
+        varsGrid.innerHTML = Object.entries(allVars)
+          .map(([k, v]) => `<div class="bg-slate-800/80 border border-slate-700 rounded px-2 py-1 flex justify-between"><span class="text-rose-300 font-bold">${k}</span><span class="text-slate-200 truncate ml-1">${v}</span></div>`)
+          .join('');
+      }
+
+      function openHistoryModal() {
+        renderHistoryList();
+        historyOverlay.classList.add('open');
+        historyOverlay.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeHistoryModal() {
+        historyOverlay.classList.remove('open');
+        historyOverlay.setAttribute('aria-hidden', 'true');
+      }
+
+      function renderHistoryList() {
+        if (state.history.length === 0) {
+          historyList.innerHTML = '<div class="text-xs text-slate-400 text-center py-10">No calculations yet. Tap keys to compute.</div>';
+          return;
+        }
+        historyList.innerHTML = state.history
+          .map((item, idx) => `
+            <button type="button" data-hist-idx="${idx}" class="w-full text-left p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition">
+              <div class="font-mono text-xs text-slate-300 truncate">${escapeHtml(item.expr)}</div>
+              <div class="font-mono text-sm font-bold text-emerald-300 text-right mt-0.5">= ${escapeHtml(item.result)}</div>
+            </button>
+          `)
+          .join('');
+      }
+
+      // --- Event Listeners ---
+      document.querySelectorAll('[data-key]').forEach(btn => {
+        btn.addEventListener('click', () => handleKey(btn.dataset.key));
+      });
+
+      document.getElementById('close-mode').addEventListener('click', closeModeModal);
+      document.getElementById('btn-history').addEventListener('click', openHistoryModal);
+      document.getElementById('close-history').addEventListener('click', closeHistoryModal);
+      document.getElementById('clear-history').addEventListener('click', () => {
+        state.history = [];
+        persistState();
+        renderHistoryList();
+      });
+
+      historyList.addEventListener('click', (e) => {
+        const card = e.target.closest('[data-hist-idx]');
+        if (!card) return;
+        const item = state.history[parseInt(card.dataset.histIdx, 10)];
+        if (item) {
+          state.expr = item.expr;
+          state.cursor = item.expr.length;
+          state.justEvaluated = false;
+          closeHistoryModal();
+          render();
+        }
+      });
+
+      document.querySelectorAll('.mode-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.angleUnit = btn.dataset.angle;
+          persistState();
+          updateModeModalUI();
+          render();
+        });
+      });
+
+      document.querySelectorAll('.fmt-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.formatMode = btn.dataset.fmt;
+          if (state.justEvaluated && !state.inError) {
+            const fmt = formatResult(state.lastNumericResult);
+            state.resultStr = fmt.main;
+            state.resultExp = fmt.exp;
+          }
+          updateModeModalUI();
+          render();
+        });
+      });
+
+      document.getElementById('digits-minus').addEventListener('click', () => {
+        state.formatDigits = Math.max(0, state.formatDigits - 1);
+        if (state.justEvaluated && !state.inError) {
+          const fmt = formatResult(state.lastNumericResult);
+          state.resultStr = fmt.main;
+          state.resultExp = fmt.exp;
+        }
+        updateModeModalUI();
+        render();
+      });
+
+      document.getElementById('digits-plus').addEventListener('click', () => {
+        state.formatDigits = Math.min(9, state.formatDigits + 1);
+        if (state.justEvaluated && !state.inError) {
+          const fmt = formatResult(state.lastNumericResult);
+          state.resultStr = fmt.main;
+          state.resultExp = fmt.exp;
+        }
+        updateModeModalUI();
+        render();
+      });
+
+      document.getElementById('btn-clear-all-mem').addEventListener('click', () => {
+        clearAllMemory();
+        updateModeModalUI();
+        render();
+      });
+
+      btnSound.addEventListener('click', () => {
+        state.soundEnabled = !state.soundEnabled;
+        btnSound.textContent = state.soundEnabled ? '🔊' : '🔇';
+        if (state.soundEnabled) playClick();
+      });
+
+      btnBacklight.addEventListener('click', () => {
+        state.backlight = !state.backlight;
+        persistState();
+        render();
+      });
+
+      // Physical Keyboard Support
+      window.addEventListener('keydown', (e) => {
+        if (modeOverlay.classList.contains('open') || historyOverlay.classList.contains('open')) {
+          if (e.key === 'Escape') {
+            closeModeModal();
+            closeHistoryModal();
+          }
+          return;
+        }
+        const map = {
+          '0': '0', '1': '1', '2': '2', '3': '3', '4': '4',
+          '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+          '.': 'DOT', '+': 'ADD', '-': 'SUB', '*': 'MUL', '/': 'DIV',
+          '(': 'LPAREN', ')': 'RPAREN', '^': 'POW', ',': 'COMMA',
+          'Enter': 'EQ', '=': 'EQ', 'Backspace': 'DEL', 'Escape': 'AC',
+          'ArrowLeft': 'LEFT', 'ArrowRight': 'RIGHT', 'ArrowUp': 'UP', 'ArrowDown': 'DOWN'
+        };
+        if (map[e.key]) {
+          e.preventDefault();
+          handleKey(map[e.key]);
+        }
+      });
+
+      // Initialize UI
+      btnSound.textContent = state.soundEnabled ? '🔊' : '🔇';
+      render();
+    })();
+  </script>
+</body>
+</html>
